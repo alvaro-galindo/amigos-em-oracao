@@ -1,0 +1,33 @@
+# Dependências e caches de ferramentas
+node_modules/
+.cache/
+.parcel-cache/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Variáveis de ambiente (nunca versionar segredos)
+.env
+.env.local
+.env*.local
+
+# Editores
+.vscode/
+.idea/
+*.suo
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+
+# Arquivos temporários
+*.tmp
+*.bak

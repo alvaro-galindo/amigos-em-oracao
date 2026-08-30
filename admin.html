@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <title>⚙️ Admin — Dos Amigos em Oração</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>" />
+</head>
+<body>
+
+  <!-- ======================================================
+       LOADING ADMIN
+  ====================================================== -->
+  <div id="admin-loading" style="display:none;position:fixed;inset:0;background:rgba(26,26,46,0.85);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+    <div class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,0.2)"></div>
+    <div style="color:#fff;font-size:0.9rem;font-weight:600">Carregando dados...</div>
+  </div>
+
+  <!-- ======================================================
+       TELA DE LOGIN
+  ====================================================== -->
+  <div class="login-container" id="login-screen">
+    <div class="login-card">
+      <div class="login-emoji">🔐</div>
+      <h2>Administração</h2>
+      <p>Dos Amigos em Oração</p>
+      <div class="form-group">
+        <label class="form-label" for="senha-input">Senha</label>
+        <input
+          class="form-input"
+          id="senha-input"
+          type="password"
+          placeholder="Digite a senha..."
+          autocomplete="current-password"
+        />
+      </div>
+      <button class="btn-primary" id="btn-login">Entrar</button>
+      <div class="login-error" id="login-error">❌ Senha incorreta</div>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       PAINEL ADMIN (oculto até login)
+  ====================================================== -->
+  <div id="admin-panel" style="display:none">
+
+    <!-- Header Admin -->
+    <div class="admin-hero">
+      <h1>⚙️ Administração</h1>
+      <p>Dos Amigos em Oração — edite o conteúdo do site</p>
+      <!-- Indicador de status JSONBin -->
+      <div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
+        <span id="db-status-badge" style="font-size:0.75rem;font-weight:700;padding:3px 12px;border-radius:20px;background:#fff8e0;color:#b07800">
+          🟡 Verificando...
+        </span>
+        <span id="db-saving-indicator" style="display:none;font-size:0.75rem;color:#fff;opacity:0.8;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite"></span>
+          Salvando...
+        </span>
+      </div>
+    </div>
+
+    <!-- Abas Admin -->
+    <nav class="admin-tabs" role="tablist">
+      <button class="admin-tab active" data-tab="geral"    role="tab">📋 Geral</button>
+      <button class="admin-tab"        data-tab="hino"     role="tab">🎵 Hino</button>
+      <button class="admin-tab"        data-tab="pedidos"  role="tab">🙏 Pedidos</button>
+      <button class="admin-tab"        data-tab="motivos"  role="tab">📖 Motivos</button>
+      <button class="admin-tab"        data-tab="lista"    role="tab">👥 Lista</button>
+      <button class="admin-tab"        data-tab="config"   role="tab">🔧 Config</button>
+    </nav>
+
+    <div class="admin-content" id="admin-content-wrap">
+
+      <!-- ---- ABA: GERAL ---- -->
+      <div class="admin-section active" id="atab-geral">
+        <div class="admin-card">
+          <h3 style="font-size:1rem;font-weight:700;color:var(--roxo-dark);margin-bottom:16px">📋 Informações Gerais</h3>
+
+          <div class="form-group">
+            <label class="form-label" for="g-titulo">Título</label>
+            <input class="form-input" id="g-titulo" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="g-subtitulo">Subtítulo</label>
+            <input class="form-input" id="g-subtitulo" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="g-data">Data de hoje</label>
+            <input class="form-input" id="g-data" type="text" placeholder="Ex: 30/08/2026" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="g-lema">Lema (uma linha por linha)</label>
+            <textarea class="form-textarea" id="g-lema" rows="6"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="g-orador">Orador / Intercessor do Dia</label>
+            <input class="form-input" id="g-orador" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="g-representacao">Texto de Representação</label>
+            <textarea class="form-textarea" id="g-representacao" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="g-rodape">Texto do Rodapé</label>
+            <input class="form-input" id="g-rodape" type="text" />
+          </div>
+          <button class="btn-primary btn-success" id="btn-salvar-geral">💾 Salvar Informações Gerais</button>
+        </div>
+      </div>
+
+      <!-- ---- ABA: HINO ---- -->
+      <div class="admin-section" id="atab-hino">
+        <div class="admin-card">
+          <h3 style="font-size:1rem;font-weight:700;color:var(--roxo-dark);margin-bottom:16px">🎵 Hino / Salmo do Dia</h3>
+
+          <div class="form-group">
+            <label class="form-label" for="h-referencia">Referência Bíblica</label>
+            <input class="form-input" id="h-referencia" type="text" placeholder="Ex: Sl 23:1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="h-numero">Número do Hino</label>
+            <input class="form-input" id="h-numero" type="text" placeholder="Ex: 1872" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="h-titulo">Título do Hino</label>
+            <input class="form-input" id="h-titulo" type="text" placeholder="Ex: O BOM PASTOR" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="h-link">Link do YouTube</label>
+            <input class="form-input" id="h-link" type="url" placeholder="https://youtu.be/..." />
+          </div>
+          <button class="btn-primary btn-success" id="btn-salvar-hino">💾 Salvar Hino do Dia</button>
+        </div>
+      </div>
+
+      <!-- ---- ABA: PEDIDOS ---- -->
+      <div class="admin-section" id="atab-pedidos">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--roxo-dark)">Pedidos de Oração</div>
+          <button class="btn-primary" id="btn-novo-pedido" style="width:auto;padding:8px 16px;font-size:0.85rem">
+            ➕ Novo Pedido
+          </button>
+        </div>
+        <div style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:10px">
+          ☰ Arraste os cards para reordenar • Use ⬆️ ⬇️ para mover para o início ou fim
+        </div>
+        <div id="pedidos-admin-list"></div>
+      </div>
+
+      <!-- ---- ABA: MOTIVOS GERAIS ---- -->
+      <div class="admin-section" id="atab-motivos">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--roxo-dark)">Motivos Gerais</div>
+          <button class="btn-primary" id="btn-novo-motivo" style="width:auto;padding:8px 16px;font-size:0.85rem">
+            ➕ Novo Motivo
+          </button>
+        </div>
+        <div id="motivos-admin-list"></div>
+      </div>
+
+      <!-- ---- ABA: LISTA ---- -->
+      <div class="admin-section" id="atab-lista">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--roxo-dark)">Lista de Intercedidos</div>
+          <button class="btn-primary" id="btn-nova-pessoa" style="width:auto;padding:8px 16px;font-size:0.85rem">
+            ➕ Adicionar
+          </button>
+        </div>
+
+        <!-- Intercedido do dia (primeiro da lista) -->
+        <div class="admin-card" style="background:linear-gradient(135deg,#f0f7ff,#e8f2ff);border-color:#b3d4f7;margin-bottom:14px">
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--texto-suave);margin-bottom:4px">🛐 Intercedido do Dia (1º da lista)</div>
+          <div id="intercedido-dia-display" style="font-size:1rem;font-weight:800;color:var(--roxo-dark)">—</div>
+          <button class="btn-primary" id="btn-rodar-lista" style="margin-top:10px;background:var(--roxo);font-size:0.82rem;padding:8px 14px">
+            🔄 Rodar Lista (mover 1º para o final)
+          </button>
+          <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:4px">
+            Move a primeira pessoa para o fim, tornando a próxima o intercedido de amanhã.
+          </div>
+        </div>
+
+        <div style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:10px">
+          ☰ Arraste os itens para reordenar • Use ⬆️ ⬇️ para mover para o início ou fim
+        </div>
+        <div id="lista-drag-container"></div>
+
+        <div style="margin-top:14px;border-top:1px solid var(--borda);padding-top:14px">
+          <div style="font-size:0.78rem;color:var(--texto-suave);margin-bottom:8px">Ou edite a lista diretamente (uma pessoa por linha):</div>
+          <textarea class="form-textarea" id="lista-textarea" rows="10" style="font-size:0.82rem;font-family:monospace"></textarea>
+          <button class="btn-primary btn-success mt-8" id="btn-salvar-lista">💾 Salvar Lista</button>
+        </div>
+      </div>
+
+      <!-- ---- ABA: CONFIG ---- -->
+      <div class="admin-section" id="atab-config">
+        <div class="admin-card">
+          <h3 style="font-size:1rem;font-weight:700;color:var(--roxo-dark);margin-bottom:16px">🔧 Configurações</h3>
+
+          <div class="form-group">
+            <label class="form-label" for="c-nome">Nome do Grupo</label>
+            <input class="form-input" id="c-nome" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-link">Link do Site (após publicar)</label>
+            <input class="form-input" id="c-link" type="url" placeholder="https://seu-site.netlify.app" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-senha">Senha do Admin</label>
+            <input class="form-input" id="c-senha" type="password" placeholder="Nova senha..." autocomplete="new-password" />
+            <div style="font-size:0.75rem;color:var(--texto-suave);margin-top:4px">Deixe em branco para não alterar</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-msg">Template da Mensagem WhatsApp</label>
+            <textarea class="form-textarea" id="c-msg" rows="8"
+              placeholder="Use {DATA}, {HINO}, {LINK_YOUTUBE}, {LINK_SITE} como variáveis"></textarea>
+            <div style="font-size:0.75rem;color:var(--texto-suave);margin-top:4px">
+              Variáveis: <code>{DATA}</code>, <code>{HINO}</code>, <code>{LINK_YOUTUBE}</code>, <code>{LINK_SITE}</code>
+            </div>
+          </div>
+          <button class="btn-primary btn-success" id="btn-salvar-config">💾 Salvar Configurações</button>
+
+          <hr style="margin:20px 0;border-color:var(--borda)" />
+
+          <!-- ====== BLOCO JSONBIN ====== -->
+          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:4px;color:#0f3460">🗄️ Banco de Dados — JSONBin.io</h4>
+          <p style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:14px;line-height:1.5">
+            Quando configurado, <strong>cada "Salvar" atualiza o banco online</strong> e todos os visitantes veem os dados novos imediatamente — sem precisar fazer deploy.
+          </p>
+
+          <!-- Status atual -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <span id="db-status-badge-config" style="font-size:0.78rem;font-weight:700;padding:4px 12px;border-radius:20px;background:#fff8e0;color:#b07800">🟡 Não configurado</span>
+            <button id="btn-sync-jsonbin" class="btn-primary" style="width:auto;padding:6px 14px;font-size:0.78rem;background:#0f3460">
+              🔄 Sincronizar agora
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="c-bin-id">BIN ID</label>
+            <input class="form-input" id="c-bin-id" type="text" placeholder="Ex: 64a1b2c3d4e5f6..." />
+            <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:3px">
+              Encontrado em jsonbin.io → seu bin → ícone de informações
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">API Key (Master Key)</label>
+            <!-- Campo mascarado (exibe quando já tem chave) -->
+            <input class="form-input" id="c-api-key" type="text" value="" placeholder="Não configurada" readonly
+              style="background:#f5f0ff;cursor:default" />
+            <!-- Campo real (oculto por padrão) -->
+            <input class="form-input" id="c-api-key-real" type="password"
+              placeholder="Cole sua $2a$10$... Master Key aqui"
+              autocomplete="new-password"
+              style="display:none;margin-top:6px" />
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+              <button id="btn-toggle-apikey" class="btn-primary" style="width:auto;padding:6px 14px;font-size:0.78rem;background:#6b5e8a">
+                👁️ Editar
+              </button>
+              <button id="btn-criar-bin" class="btn-primary" style="width:auto;padding:6px 14px;font-size:0.78rem;background:var(--verde)">
+                ✨ Criar novo Bin
+              </button>
+            </div>
+            <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:4px">
+              Em jsonbin.io → API Keys → Master Key. Nunca compartilhe essa chave.
+            </div>
+          </div>
+
+          <button class="btn-primary" id="btn-salvar-jsonbin" style="background:#0f3460">
+            🔌 Conectar ao JSONBin
+          </button>
+          <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:6px">
+            Após conectar, todos os "Salvar" do painel vão direto ao banco. O site público lê de lá automaticamente.
+          </div>
+
+          <hr style="margin:20px 0;border-color:var(--borda)" />
+          <!-- ====== FIM JSONBIN ====== -->
+
+          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--roxo-dark)">📥 Exportar para Deploy</h4>
+          <button class="btn-primary" id="btn-download-datajs" style="background:#0f3460">
+            ⬇️ Download data.js atualizado
+          </button>
+          <div style="font-size:0.75rem;color:var(--texto-suave);margin-top:6px">
+            Baixa o arquivo <code>data.js</code> com todas as edições atuais. Use como fallback offline ou para o primeiro deploy.
+          </div>
+
+          <hr style="margin:20px 0;border-color:var(--borda)" />
+
+          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--vermelho)">⚠️ Zona de Perigo</h4>
+          <button class="btn-primary btn-danger" id="btn-resetar">
+            🔄 Restaurar dados originais (data.js)
+          </button>
+          <div style="font-size:0.75rem;color:var(--texto-suave);margin-top:6px">
+            Apaga todas as edições feitas no painel e volta para o conteúdo original do arquivo data.js.
+          </div>
+
+          <hr style="margin:20px 0;border-color:var(--borda)" />
+          <a href="index.html" class="btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--roxo)">
+            👁️ Ver Site Público
+          </a>
+
+          <button class="btn-primary" id="btn-sair" style="margin-top:8px;background:#6b5e8a">
+            🚪 Sair
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </div><!-- /admin-panel -->
+
+  <!-- ======================================================
+       MODAL: EDITAR PEDIDO
+  ====================================================== -->
+  <div class="modal-overlay" id="modal-pedido">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" id="modal-pedido-close" aria-label="Fechar">✕</button>
+      <div class="modal-titulo" id="modal-pedido-titulo">Novo Pedido</div>
+
+      <input type="hidden" id="mp-idx" value="-1" />
+
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" id="mp-tipo">
+          <option value="pedido">🙏 Pedido de Oração</option>
+          <option value="gratidao">🙌 Gratidão / Resposta</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mp-de">De (quem enviou)</label>
+        <input class="form-input" id="mp-de" type="text" placeholder="Ex: Valéria" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mp-nome">Nome da pessoa (ou pessoas)</label>
+        <input class="form-input" id="mp-nome" type="text" placeholder="Ex: João Silva (40)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mp-detalhe">Detalhe/relação</label>
+        <input class="form-input" id="mp-detalhe" type="text" placeholder="Ex: meu filho, esposa..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mp-pedido">Motivo / Pedido principal</label>
+        <input class="form-input" id="mp-pedido" type="text" placeholder="Ex: Câncer — em tratamento" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mp-descricao">Descrição completa</label>
+        <textarea class="form-textarea" id="mp-descricao" rows="4" placeholder="Contexto completo do pedido..."></textarea>
+      </div>
+      <div class="form-group" style="display:flex;gap:16px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+          <input type="checkbox" id="mp-urgente" /> ⚡ Urgente
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+          <input type="checkbox" id="mp-agradecimento" /> 🙌 Gratidão
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+          <input type="checkbox" id="mp-milagre" /> ✨ Milagre!
+        </label>
+      </div>
+      <button class="btn-primary btn-success" id="btn-salvar-pedido">💾 Salvar Pedido</button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       MODAL: EDITAR MOTIVO
+  ====================================================== -->
+  <div class="modal-overlay" id="modal-motivo">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" id="modal-motivo-close" aria-label="Fechar">✕</button>
+      <div class="modal-titulo" id="modal-motivo-titulo">Novo Motivo</div>
+
+      <input type="hidden" id="mm-idx" value="-1" />
+
+      <div class="form-group">
+        <label class="form-label" for="mm-titulo">Título</label>
+        <input class="form-input" id="mm-titulo" type="text" placeholder="Ex: AFLITOS" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mm-referencia">Referência Bíblica</label>
+        <input class="form-input" id="mm-referencia" type="text" placeholder="Ex: II Coríntios 4:8" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mm-link">Link YouTube</label>
+        <input class="form-input" id="mm-link" type="url" placeholder="https://youtu.be/..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mm-descricao">Descrição / Versículo</label>
+        <textarea class="form-textarea" id="mm-descricao" rows="3"></textarea>
+      </div>
+      <button class="btn-primary btn-success" id="btn-salvar-motivo">💾 Salvar Motivo</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="db.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
