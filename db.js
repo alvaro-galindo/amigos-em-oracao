@@ -18,9 +18,22 @@ const DB = (() => {
   const CACHE_TTL_MS  = 5 * 60 * 1000;         // 5 min — tempo máx do cache
 
   // ----------------------------------------------------------
-  // CONFIGURAÇÃO (BIN ID e API KEY ficam no localStorage)
+  // CONFIGURAÇÃO (BIN ID e API KEY)
+  //
+  // Prioridade:
+  //   1. window.ENV_CONFIG  → gerado pelo build-env.js no deploy do Netlify
+  //                           (funciona em TODOS os dispositivos automaticamente)
+  //   2. localStorage       → configurado manualmente pelo admin no painel
+  //                           (fallback para uso local / sem env vars)
   // ----------------------------------------------------------
   function getConfig() {
+    // 1) Preferência: variáveis injetadas em tempo de build pelo Netlify
+    const env = (typeof window !== "undefined" && window.ENV_CONFIG) || {};
+    if (env.JSONBIN_BIN_ID && env.JSONBIN_API_KEY) {
+      return { binId: env.JSONBIN_BIN_ID, apiKey: env.JSONBIN_API_KEY, fromEnv: true };
+    }
+
+    // 2) Fallback: configuração manual salva no localStorage do admin
     try {
       const c = localStorage.getItem(CONFIG_KEY);
       if (c) return JSON.parse(c);
@@ -29,12 +42,20 @@ const DB = (() => {
   }
 
   function setConfig(binId, apiKey) {
+    // setConfig só escreve no localStorage (usado pelo painel admin manual)
+    // Quando ENV_CONFIG está presente, ele já sobrepõe automaticamente
     localStorage.setItem(CONFIG_KEY, JSON.stringify({ binId: binId.trim(), apiKey: apiKey.trim() }));
   }
 
   function isConfigurado() {
     const c = getConfig();
     return !!(c.binId && c.apiKey);
+  }
+
+  // Indica se as credenciais vieram das env vars do Netlify (somente leitura)
+  function isFromEnv() {
+    const env = (typeof window !== "undefined" && window.ENV_CONFIG) || {};
+    return !!(env.JSONBIN_BIN_ID && env.JSONBIN_API_KEY);
   }
 
   // ----------------------------------------------------------
@@ -209,6 +230,6 @@ const DB = (() => {
   }
 
   // API pública
-  return { ler, salvar, criarBin, getConfig, setConfig, isConfigurado, invalidarCache, getCacheLocal };
+  return { ler, salvar, criarBin, getConfig, setConfig, isConfigurado, isFromEnv, invalidarCache, getCacheLocal };
 
 })();

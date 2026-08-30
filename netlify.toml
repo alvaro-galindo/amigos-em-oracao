@@ -1,0 +1,8 @@
+[build]
+  # Comando que gera o env-config.js com as variáveis de ambiente antes do deploy
+  command   = "node build-env.js"
+  # Pasta publicada (todos os arquivos do site estão na raiz de /site)
+  publish   = "."
+
+[build.environment]
+  NODE_VERSION = "18"

@@ -396,6 +396,10 @@
   <!-- Toast -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <!-- env-config.js é gerado pelo build-env.js no deploy do Netlify.
+       Define window.ENV_CONFIG com JSONBIN_BIN_ID e JSONBIN_API_KEY.
+       Deve ser carregado ANTES de db.js. -->
+  <script src="env-config.js" onerror="window.ENV_CONFIG=window.ENV_CONFIG||{}"></script>
   <script src="data.js"></script>
   <script src="db.js"></script>
   <script src="admin.js"></script>

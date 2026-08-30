@@ -514,9 +514,52 @@
   }
 
   function preencherJsonbinConfig() {
-    const cfg = DB.getConfig();
-    document.getElementById("c-bin-id").value  = cfg.binId  || "";
-    document.getElementById("c-api-key").value = cfg.apiKey ? "••••••••" : "";
+    const cfg      = DB.getConfig();
+    const fromEnv  = DB.isFromEnv();
+
+    const binIdEl      = document.getElementById("c-bin-id");
+    const apiKeyEl     = document.getElementById("c-api-key");
+    const btnToggle    = document.getElementById("btn-toggle-apikey");
+    const btnCriar     = document.getElementById("btn-criar-bin");
+    const btnConectar  = document.getElementById("btn-salvar-jsonbin");
+    const btnSync      = document.getElementById("btn-sync-jsonbin");
+
+    binIdEl.value  = cfg.binId  || "";
+    apiKeyEl.value = cfg.apiKey ? "••••••••" : "";
+
+    if (fromEnv) {
+      // Credenciais vêm do Netlify — campos somente leitura
+      binIdEl.readOnly            = true;
+      binIdEl.style.background    = "#e8faf0";
+      binIdEl.style.cursor        = "default";
+      if (apiKeyEl) {
+        apiKeyEl.value            = "✅ Configurada via Netlify";
+        apiKeyEl.style.background = "#e8faf0";
+      }
+
+      // Desabilita controles manuais
+      if (btnToggle)   { btnToggle.disabled  = true; btnToggle.title  = "Configurado via Netlify"; }
+      if (btnCriar)    { btnCriar.disabled   = true; btnCriar.title   = "Configurado via Netlify"; }
+      if (btnConectar) { btnConectar.disabled = true; btnConectar.title = "Configurado via Netlify"; }
+
+      // Insere (ou atualiza) aviso visual
+      let aviso = document.getElementById("env-config-notice");
+      if (!aviso) {
+        aviso = document.createElement("div");
+        aviso.id = "env-config-notice";
+        aviso.style.cssText = "margin:10px 0;padding:10px 14px;border-radius:8px;background:#e8faf0;border:1px solid #a3e0c0;font-size:0.78rem;line-height:1.5;color:#1a6e3a";
+        const btnArea = btnConectar ? btnConectar.parentNode : binIdEl.parentNode;
+        btnArea.insertBefore(aviso, btnConectar || null);
+      }
+      aviso.innerHTML = "🌐 <strong>Configurado via Netlify Environment Variables.</strong><br>As credenciais são injetadas automaticamente a cada deploy — todos os dispositivos se conectam ao mesmo banco sem configuração manual.";
+
+      if (btnSync) btnSync.style.display = "inline-flex"; // mantém o botão de sync visível
+    } else {
+      binIdEl.readOnly         = false;
+      binIdEl.style.background = "";
+      binIdEl.style.cursor     = "";
+    }
+
     atualizarIndicadorDB(DB.isConfigurado());
   }
 

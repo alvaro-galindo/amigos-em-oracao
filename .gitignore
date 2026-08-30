@@ -17,6 +17,9 @@ npm-debug.log*
 .env.local
 .env*.local
 
+# Gerado pelo build-env.js — contém credenciais do JSONBin, nunca commitar
+env-config.js
+
 # Editores
 .vscode/
 .idea/
