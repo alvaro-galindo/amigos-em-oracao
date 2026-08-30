@@ -96,16 +96,7 @@
   }
 
   function atualizarIndicadorDB(conectado) {
-    const el = document.getElementById("db-status-badge");
-    if (!el) return;
-    if (conectado) {
-      el.textContent = "🟢 JSONBin conectado";
-      el.style.background = "#e8faf0"; el.style.color = "#1a9e55";
-    } else {
-      el.textContent = DB.isConfigurado() ? "🔴 Erro na conexão" : "🟡 Só local (sem JSONBin)";
-      el.style.background = DB.isConfigurado() ? "#fde8e8" : "#fff8e0";
-      el.style.color      = DB.isConfigurado() ? "#c0392b" : "#b07800";
-    }
+    // badge removido do header — apenas atualiza o indicador de salvando
   }
 
   // ============================================================
@@ -118,11 +109,7 @@
     renderMotivosAdmin();
     renderListaAdmin();
     preencherConfig();
-    preencherJsonbinConfig();
     iniciarAbas();
-
-    // Mostra status atual da conexão
-    atualizarIndicadorDB(DB.isConfigurado());
   }
 
   // ============================================================
@@ -144,9 +131,12 @@
   // ABA GERAL
   // ============================================================
   function preencherGeral() {
+    // Data: usa a data atual do dispositivo (o campo no banco é ignorado)
+    const hoje = new Date();
+    const dataHoje = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    document.getElementById("g-data").value          = dataHoje;
     document.getElementById("g-titulo").value        = dados.titulo || "";
     document.getElementById("g-subtitulo").value     = dados.subtitulo || "";
-    document.getElementById("g-data").value          = dados.data || "";
     document.getElementById("g-lema").value          = (dados.lema || []).join("\n");
     document.getElementById("g-orador").value        = dados.orador || "";
     document.getElementById("g-representacao").value = dados.representacao || "";
@@ -154,9 +144,14 @@
   }
 
   document.getElementById("btn-salvar-geral").addEventListener("click", async () => {
+    // Se o campo data estiver em branco, usa a data atual
+    const campoData = document.getElementById("g-data").value.trim();
+    const hoje = new Date();
+    const dataHoje = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
     dados.titulo        = document.getElementById("g-titulo").value.trim();
     dados.subtitulo     = document.getElementById("g-subtitulo").value.trim();
-    dados.data          = document.getElementById("g-data").value.trim();
+    dados.data          = campoData || dataHoje;
     dados.lema          = document.getElementById("g-lema").value.split("\n").map(s => s.trim()).filter(Boolean);
     dados.orador        = document.getElementById("g-orador").value.trim();
     dados.representacao = document.getElementById("g-representacao").value.trim();
@@ -182,7 +177,7 @@
       titulo:     document.getElementById("h-titulo").value.trim(),
       link:       document.getElementById("h-link").value.trim()
     };
-    await salvar("✅ Hino do dia salvo!");
+    await salvar("✅ Oração do dia salva!");
   });
 
   // ============================================================
@@ -206,7 +201,7 @@
     editaveis.forEach(({ p, idx }, posicao) => {
       const card = document.createElement("div");
       card.className = "admin-card drag-card";
-      card.setAttribute("draggable", "true");
+      card.setAttribute("draggable", "false");
       card.dataset.realIdx = idx;
       card.dataset.pos     = posicao;
 
@@ -307,6 +302,22 @@
   }
 
   document.getElementById("btn-novo-pedido").addEventListener("click", () => abrirModalPedido(-1));
+
+  document.getElementById("btn-rodar-pedidos") &&
+  document.getElementById("btn-rodar-pedidos").addEventListener("click", async () => {
+    const editaveis = pedidosEditaveis();
+    if (editaveis.length < 2) { showToast("⚠️ Menos de 2 pedidos para rodar."); return; }
+    // Pega o último editável e move para o início
+    const ultimo = editaveis[editaveis.length - 1].p;
+    const idxUltimo = editaveis[editaveis.length - 1].idx;
+    dados.pedidos.splice(idxUltimo, 1);
+    // Insere antes do primeiro pedido não-destaque
+    const primeiroIdx = dados.pedidos.findIndex(p => !p.destaque);
+    if (primeiroIdx >= 0) dados.pedidos.splice(primeiroIdx, 0, ultimo);
+    else dados.pedidos.unshift(ultimo);
+    renderPedidosAdmin();
+    await salvar(`🔄 Rodízio feito! Primeiro pedido: ${ultimo.nome || "(sem nome)"}`);
+  });
   document.getElementById("modal-pedido-close").addEventListener("click", () => modalPedido.classList.remove("open"));
   modalPedido.addEventListener("click", e => { if (e.target === modalPedido) modalPedido.classList.remove("open"); });
 
@@ -419,7 +430,7 @@
     (dados.lista || []).forEach((nome, idx) => {
       const item = document.createElement("div");
       item.className = "admin-card drag-card";
-      item.setAttribute("draggable", "true");
+      item.setAttribute("draggable", "false");
       item.dataset.listaIdx = idx;
       item.style.cssText    = "margin-bottom:6px;padding:10px 12px";
 
@@ -481,8 +492,9 @@
   document.getElementById("btn-rodar-lista") &&
   document.getElementById("btn-rodar-lista").addEventListener("click", async () => {
     if (!dados.lista || dados.lista.length < 2) { showToast("⚠️ Lista tem menos de 2 pessoas."); return; }
-    const primeiro = dados.lista.shift();
-    dados.lista.push(primeiro);
+    // Move o último para o início
+    const ultimo = dados.lista.pop();
+    dados.lista.unshift(ultimo);
     renderListaAdmin();
     await salvar(`🔄 Rodízio feito! Intercedido de hoje: ${dados.lista[0]}`);
   });
@@ -513,56 +525,6 @@
     document.getElementById("c-msg").value  = dados.config.mensagemWhatsApp || "";
   }
 
-  function preencherJsonbinConfig() {
-    const cfg      = DB.getConfig();
-    const fromEnv  = DB.isFromEnv();
-
-    const binIdEl      = document.getElementById("c-bin-id");
-    const apiKeyEl     = document.getElementById("c-api-key");
-    const btnToggle    = document.getElementById("btn-toggle-apikey");
-    const btnCriar     = document.getElementById("btn-criar-bin");
-    const btnConectar  = document.getElementById("btn-salvar-jsonbin");
-    const btnSync      = document.getElementById("btn-sync-jsonbin");
-
-    binIdEl.value  = cfg.binId  || "";
-    apiKeyEl.value = cfg.apiKey ? "••••••••" : "";
-
-    if (fromEnv) {
-      // Credenciais vêm do Netlify — campos somente leitura
-      binIdEl.readOnly            = true;
-      binIdEl.style.background    = "#e8faf0";
-      binIdEl.style.cursor        = "default";
-      if (apiKeyEl) {
-        apiKeyEl.value            = "✅ Configurada via Netlify";
-        apiKeyEl.style.background = "#e8faf0";
-      }
-
-      // Desabilita controles manuais
-      if (btnToggle)   { btnToggle.disabled  = true; btnToggle.title  = "Configurado via Netlify"; }
-      if (btnCriar)    { btnCriar.disabled   = true; btnCriar.title   = "Configurado via Netlify"; }
-      if (btnConectar) { btnConectar.disabled = true; btnConectar.title = "Configurado via Netlify"; }
-
-      // Insere (ou atualiza) aviso visual
-      let aviso = document.getElementById("env-config-notice");
-      if (!aviso) {
-        aviso = document.createElement("div");
-        aviso.id = "env-config-notice";
-        aviso.style.cssText = "margin:10px 0;padding:10px 14px;border-radius:8px;background:#e8faf0;border:1px solid #a3e0c0;font-size:0.78rem;line-height:1.5;color:#1a6e3a";
-        const btnArea = btnConectar ? btnConectar.parentNode : binIdEl.parentNode;
-        btnArea.insertBefore(aviso, btnConectar || null);
-      }
-      aviso.innerHTML = "🌐 <strong>Configurado via Netlify Environment Variables.</strong><br>As credenciais são injetadas automaticamente a cada deploy — todos os dispositivos se conectam ao mesmo banco sem configuração manual.";
-
-      if (btnSync) btnSync.style.display = "inline-flex"; // mantém o botão de sync visível
-    } else {
-      binIdEl.readOnly         = false;
-      binIdEl.style.background = "";
-      binIdEl.style.cursor     = "";
-    }
-
-    atualizarIndicadorDB(DB.isConfigurado());
-  }
-
   document.getElementById("btn-salvar-config").addEventListener("click", async () => {
     if (!dados.config) dados.config = {};
     dados.config.nomeGrupo        = document.getElementById("c-nome").value.trim();
@@ -576,119 +538,6 @@
     await salvar("✅ Configurações salvas!");
   });
 
-  // --- Configurar JSONBin ---
-  document.getElementById("btn-salvar-jsonbin") &&
-  document.getElementById("btn-salvar-jsonbin").addEventListener("click", async () => {
-    const binId  = document.getElementById("c-bin-id").value.trim();
-    const apiKey = document.getElementById("c-api-key-real").value.trim();
-
-    if (!binId || !apiKey) { showToast("⚠️ Preencha o BIN ID e a API Key!"); return; }
-
-    DB.setConfig(binId, apiKey);
-    document.getElementById("c-api-key").value      = "••••••••";
-    document.getElementById("c-api-key-real").value = "";
-
-    // Testa lendo do bin
-    showToast("🔄 Testando conexão...", 2000);
-    DB.invalidarCache();
-    const resultado = await DB.salvar(dados);
-    if (resultado.ok) {
-      showToast("✅ JSONBin configurado e conectado! Os dados foram sincronizados.");
-      atualizarIndicadorDB(true);
-    } else {
-      showToast("❌ Não foi possível conectar: " + resultado.erro, 5000);
-      atualizarIndicadorDB(false);
-    }
-  });
-
-  // --- Criar novo Bin automaticamente ---
-  document.getElementById("btn-criar-bin") &&
-  document.getElementById("btn-criar-bin").addEventListener("click", async () => {
-    const apiKey = document.getElementById("c-api-key-real").value.trim();
-    if (!apiKey) { showToast("⚠️ Informe a API Key primeiro!"); return; }
-
-    showToast("🔄 Criando bin...", 3000);
-    const resultado = await DB.criarBin(apiKey, "amigos-em-oracao", dados);
-    if (resultado.ok) {
-      document.getElementById("c-bin-id").value      = resultado.binId;
-      document.getElementById("c-api-key").value     = "••••••••";
-      document.getElementById("c-api-key-real").value = "";
-      showToast(`✅ Bin criado! ID: ${resultado.binId}. Anote esse ID!`, 6000);
-      atualizarIndicadorDB(true);
-    } else {
-      showToast("❌ Erro ao criar bin: " + resultado.erro, 5000);
-    }
-  });
-
-  // Toggle mostrar/ocultar API key
-  document.getElementById("btn-toggle-apikey") &&
-  document.getElementById("btn-toggle-apikey").addEventListener("click", () => {
-    const realInput  = document.getElementById("c-api-key-real");
-    const maskInput  = document.getElementById("c-api-key");
-    const btn        = document.getElementById("btn-toggle-apikey");
-    const estaOculto = realInput.style.display === "none" || realInput.style.display === "";
-
-    if (estaOculto) {
-      const cfg = DB.getConfig();
-      realInput.value         = cfg.apiKey || "";
-      realInput.style.display = "block";
-      maskInput.style.display = "none";
-      btn.textContent         = "🙈 Ocultar";
-    } else {
-      realInput.style.display = "none";
-      maskInput.style.display = "block";
-      btn.textContent         = "👁️ Editar";
-    }
-  });
-
-  // --- Download data.js ---
-  document.getElementById("btn-download-datajs").addEventListener("click", () => {
-    const linhas = [
-      "// ============================================================",
-      `// DATA.JS — Gerado pelo painel Admin em ${new Date().toLocaleString("pt-BR")}`,
-      "// ============================================================",
-      "",
-      "const SITE_DATA = " + JSON.stringify(dados, null, 2) + ";",
-      "",
-      "if (typeof module !== 'undefined') module.exports = SITE_DATA;"
-    ];
-    const blob = new Blob([linhas.join("\n")], { type: "application/javascript;charset=utf-8" });
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement("a"), { href: url, download: "data.js" });
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast("⬇️ data.js baixado!");
-  });
-
-  // --- Forçar re-sync do JSONBin ---
-  document.getElementById("btn-sync-jsonbin") &&
-  document.getElementById("btn-sync-jsonbin").addEventListener("click", async () => {
-    if (!DB.isConfigurado()) { showToast("⚠️ Configure o JSONBin primeiro."); return; }
-    showToast("🔄 Buscando dados do JSONBin...", 2000);
-    DB.invalidarCache();
-    try {
-      dados = await DB.ler();
-      preencherGeral(); preencherHino();
-      renderPedidosAdmin(); renderMotivosAdmin();
-      renderListaAdmin(); preencherConfig();
-      showToast("✅ Dados sincronizados do JSONBin!");
-      atualizarIndicadorDB(true);
-    } catch(e) {
-      showToast("❌ Erro ao sincronizar: " + e.message, 4000);
-      atualizarIndicadorDB(false);
-    }
-  });
-
-  // --- Resetar ---
-  document.getElementById("btn-resetar").addEventListener("click", async () => {
-    if (!confirm("Apagar TODAS as edições e restaurar o conteúdo original do data.js?")) return;
-    dados = JSON.parse(JSON.stringify(SITE_DATA));
-    preencherGeral(); preencherHino();
-    renderPedidosAdmin(); renderMotivosAdmin();
-    renderListaAdmin(); preencherConfig();
-    await salvar("🔄 Dados restaurados para o original!");
-  });
-
   // --- Sair ---
   document.getElementById("btn-sair").addEventListener("click", () => {
     sessionStorage.removeItem("admin_logado");
@@ -697,21 +546,54 @@
 
   // ============================================================
   // DRAG-AND-DROP GENÉRICO (HTML5)
+  // Drag só inicia quando o usuário clica no .drag-handle
   // ============================================================
   function ativarDragDrop(container, seletor, onReorder) {
-    let dragging = null;
+    let dragging    = null;
+    let handleClick = false; // flag: o mousedown veio do handle?
+
+    // Habilita draggable só quando o ponteiro está sobre o handle
+    container.addEventListener("mousedown", e => {
+      const handle = e.target.closest(".drag-handle");
+      const card   = e.target.closest(seletor);
+      if (handle && card) {
+        handleClick = true;
+        card.setAttribute("draggable", "true");
+      } else {
+        handleClick = false;
+        // Garante que cards sem drag ativo não sejam arrastáveis
+        if (card) card.setAttribute("draggable", "false");
+      }
+    });
+
+    // Touch: mesmo comportamento
+    container.addEventListener("touchstart", e => {
+      const handle = e.target.closest(".drag-handle");
+      const card   = e.target.closest(seletor);
+      if (handle && card) card.setAttribute("draggable", "true");
+      else if (card)      card.setAttribute("draggable", "false");
+    }, { passive: true });
 
     container.addEventListener("dragstart", e => {
       const card = e.target.closest(seletor);
-      if (!card) return;
+      if (!card || card.getAttribute("draggable") === "false") {
+        e.preventDefault();
+        return;
+      }
       dragging = card;
       setTimeout(() => card.style.opacity = "0.4", 0);
     });
+
     container.addEventListener("dragend", e => {
       const card = e.target.closest(seletor);
-      if (card) card.style.opacity = "";
-      dragging = null;
+      if (card) {
+        card.style.opacity = "";
+        card.setAttribute("draggable", "false"); // desabilita até próximo handle-click
+      }
+      dragging    = null;
+      handleClick = false;
     });
+
     container.addEventListener("dragover", e => {
       e.preventDefault();
       const over = e.target.closest(seletor);
@@ -721,10 +603,12 @@
       if (e.clientY > midY) over.style.borderBottom = "2px solid var(--roxo)";
       else                   over.style.borderTop    = "2px solid var(--roxo)";
     });
+
     container.addEventListener("dragleave", e => {
       const over = e.target.closest(seletor);
       if (over) { over.style.borderTop = ""; over.style.borderBottom = ""; }
     });
+
     container.addEventListener("drop", e => {
       e.preventDefault();
       const over = e.target.closest(seletor);

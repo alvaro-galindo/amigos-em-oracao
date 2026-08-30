@@ -50,11 +50,11 @@
     <div class="admin-hero">
       <h1>⚙️ Administração</h1>
       <p>Dos Amigos em Oração — edite o conteúdo do site</p>
-      <!-- Indicador de status JSONBin -->
-      <div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
-        <span id="db-status-badge" style="font-size:0.75rem;font-weight:700;padding:3px 12px;border-radius:20px;background:#fff8e0;color:#b07800">
-          🟡 Verificando...
-        </span>
+      <div style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
+        <a href="index.html"
+           style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:0.8rem;font-weight:700;padding:6px 16px;border-radius:20px;background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.35);backdrop-filter:blur(4px)">
+          🌐 Ir para o Site
+        </a>
         <span id="db-saving-indicator" style="display:none;font-size:0.75rem;color:#fff;opacity:0.8;align-items:center;gap:6px">
           <span style="width:10px;height:10px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 0.7s linear infinite"></span>
           Salvando...
@@ -65,7 +65,7 @@
     <!-- Abas Admin -->
     <nav class="admin-tabs" role="tablist">
       <button class="admin-tab active" data-tab="geral"    role="tab">📋 Geral</button>
-      <button class="admin-tab"        data-tab="hino"     role="tab">🎵 Hino</button>
+      <button class="admin-tab"        data-tab="oracao"    role="tab">🙏 Oração</button>
       <button class="admin-tab"        data-tab="pedidos"  role="tab">🙏 Pedidos</button>
       <button class="admin-tab"        data-tab="motivos"  role="tab">📖 Motivos</button>
       <button class="admin-tab"        data-tab="lista"    role="tab">👥 Lista</button>
@@ -111,28 +111,28 @@
         </div>
       </div>
 
-      <!-- ---- ABA: HINO ---- -->
-      <div class="admin-section" id="atab-hino">
+      <!-- ---- ABA: ORAÇÃO DO DIA ---- -->
+      <div class="admin-section" id="atab-oracao">
         <div class="admin-card">
-          <h3 style="font-size:1rem;font-weight:700;color:var(--roxo-dark);margin-bottom:16px">🎵 Hino / Salmo do Dia</h3>
+          <h3 style="font-size:1rem;font-weight:700;color:var(--roxo-dark);margin-bottom:16px">🙏 Oração do Dia</h3>
 
           <div class="form-group">
             <label class="form-label" for="h-referencia">Referência Bíblica</label>
             <input class="form-input" id="h-referencia" type="text" placeholder="Ex: Sl 23:1" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="h-numero">Número do Hino</label>
+            <label class="form-label" for="h-numero">Número da Oração</label>
             <input class="form-input" id="h-numero" type="text" placeholder="Ex: 1872" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="h-titulo">Título do Hino</label>
+            <label class="form-label" for="h-titulo">Assunto da Oração</label>
             <input class="form-input" id="h-titulo" type="text" placeholder="Ex: O BOM PASTOR" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="h-link">Link do YouTube</label>
+            <label class="form-label" for="h-link">Link da Oração</label>
             <input class="form-input" id="h-link" type="url" placeholder="https://youtu.be/..." />
           </div>
-          <button class="btn-primary btn-success" id="btn-salvar-hino">💾 Salvar Hino do Dia</button>
+          <button class="btn-primary btn-success" id="btn-salvar-hino">💾 Salvar Oração do Dia</button>
         </div>
       </div>
 
@@ -140,12 +140,17 @@
       <div class="admin-section" id="atab-pedidos">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
           <div style="font-size:0.85rem;font-weight:700;color:var(--roxo-dark)">Pedidos de Oração</div>
-          <button class="btn-primary" id="btn-novo-pedido" style="width:auto;padding:8px 16px;font-size:0.85rem">
-            ➕ Novo Pedido
-          </button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-primary" id="btn-rodar-pedidos" style="width:auto;padding:8px 14px;font-size:0.82rem;background:var(--roxo)">
+              🔄 Rodar
+            </button>
+            <button class="btn-primary" id="btn-novo-pedido" style="width:auto;padding:8px 16px;font-size:0.85rem">
+              ➕ Novo Pedido
+            </button>
+          </div>
         </div>
         <div style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:10px">
-          ☰ Arraste os cards para reordenar • Use ⬆️ ⬇️ para mover para o início ou fim
+          🔄 Rodar traz o último pedido para o início • ☰ Arraste pelo ícone para reordenar • Use ⬆️ ⬇️ para mover
         </div>
         <div id="pedidos-admin-list"></div>
       </div>
@@ -175,15 +180,15 @@
           <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--texto-suave);margin-bottom:4px">🛐 Intercedido do Dia (1º da lista)</div>
           <div id="intercedido-dia-display" style="font-size:1rem;font-weight:800;color:var(--roxo-dark)">—</div>
           <button class="btn-primary" id="btn-rodar-lista" style="margin-top:10px;background:var(--roxo);font-size:0.82rem;padding:8px 14px">
-            🔄 Rodar Lista (mover 1º para o final)
+            🔄 Rodar Lista (trazer último para o início)
           </button>
           <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:4px">
-            Move a primeira pessoa para o fim, tornando a próxima o intercedido de amanhã.
+            Move a última pessoa para o início, tornando-a o intercedido de hoje.
           </div>
         </div>
 
         <div style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:10px">
-          ☰ Arraste os itens para reordenar • Use ⬆️ ⬇️ para mover para o início ou fim
+          ☰ Arraste pelo ícone para reordenar • Use ⬆️ ⬇️ para mover para o início ou fim
         </div>
         <div id="lista-drag-container"></div>
 
@@ -224,85 +229,7 @@
 
           <hr style="margin:20px 0;border-color:var(--borda)" />
 
-          <!-- ====== BLOCO JSONBIN ====== -->
-          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:4px;color:#0f3460">🗄️ Banco de Dados — JSONBin.io</h4>
-          <p style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:14px;line-height:1.5">
-            Quando configurado, <strong>cada "Salvar" atualiza o banco online</strong> e todos os visitantes veem os dados novos imediatamente — sem precisar fazer deploy.
-          </p>
-
-          <!-- Status atual -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <span id="db-status-badge-config" style="font-size:0.78rem;font-weight:700;padding:4px 12px;border-radius:20px;background:#fff8e0;color:#b07800">🟡 Não configurado</span>
-            <button id="btn-sync-jsonbin" class="btn-primary" style="width:auto;padding:6px 14px;font-size:0.78rem;background:#0f3460">
-              🔄 Sincronizar agora
-            </button>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="c-bin-id">BIN ID</label>
-            <input class="form-input" id="c-bin-id" type="text" placeholder="Ex: 64a1b2c3d4e5f6..." />
-            <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:3px">
-              Encontrado em jsonbin.io → seu bin → ícone de informações
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">API Key (Master Key)</label>
-            <!-- Campo mascarado (exibe quando já tem chave) -->
-            <input class="form-input" id="c-api-key" type="text" value="" placeholder="Não configurada" readonly
-              style="background:#f5f0ff;cursor:default" />
-            <!-- Campo real (oculto por padrão) -->
-            <input class="form-input" id="c-api-key-real" type="password"
-              placeholder="Cole sua $2a$10$... Master Key aqui"
-              autocomplete="new-password"
-              style="display:none;margin-top:6px" />
-            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
-              <button id="btn-toggle-apikey" class="btn-primary" style="width:auto;padding:6px 14px;font-size:0.78rem;background:#6b5e8a">
-                👁️ Editar
-              </button>
-              <button id="btn-criar-bin" class="btn-primary" style="width:auto;padding:6px 14px;font-size:0.78rem;background:var(--verde)">
-                ✨ Criar novo Bin
-              </button>
-            </div>
-            <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:4px">
-              Em jsonbin.io → API Keys → Master Key. Nunca compartilhe essa chave.
-            </div>
-          </div>
-
-          <button class="btn-primary" id="btn-salvar-jsonbin" style="background:#0f3460">
-            🔌 Conectar ao JSONBin
-          </button>
-          <div style="font-size:0.72rem;color:var(--texto-suave);margin-top:6px">
-            Após conectar, todos os "Salvar" do painel vão direto ao banco. O site público lê de lá automaticamente.
-          </div>
-
-          <hr style="margin:20px 0;border-color:var(--borda)" />
-          <!-- ====== FIM JSONBIN ====== -->
-
-          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--roxo-dark)">📥 Exportar para Deploy</h4>
-          <button class="btn-primary" id="btn-download-datajs" style="background:#0f3460">
-            ⬇️ Download data.js atualizado
-          </button>
-          <div style="font-size:0.75rem;color:var(--texto-suave);margin-top:6px">
-            Baixa o arquivo <code>data.js</code> com todas as edições atuais. Use como fallback offline ou para o primeiro deploy.
-          </div>
-
-          <hr style="margin:20px 0;border-color:var(--borda)" />
-
-          <h4 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--vermelho)">⚠️ Zona de Perigo</h4>
-          <button class="btn-primary btn-danger" id="btn-resetar">
-            🔄 Restaurar dados originais (data.js)
-          </button>
-          <div style="font-size:0.75rem;color:var(--texto-suave);margin-top:6px">
-            Apaga todas as edições feitas no painel e volta para o conteúdo original do arquivo data.js.
-          </div>
-
-          <hr style="margin:20px 0;border-color:var(--borda)" />
-          <a href="index.html" class="btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--roxo)">
-            👁️ Ver Site Público
-          </a>
-
-          <button class="btn-primary" id="btn-sair" style="margin-top:8px;background:#6b5e8a">
+          <button class="btn-primary" id="btn-sair" style="background:#6b5e8a">
             🚪 Sair
           </button>
         </div>

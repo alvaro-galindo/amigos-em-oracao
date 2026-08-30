@@ -37,7 +37,11 @@
     // --- HERO ---
     document.getElementById("h-titulo").textContent    = D.titulo    || "DOS AMIGOS EM ORAÇÃO";
     document.getElementById("h-subtitulo").textContent = D.subtitulo || "PAZ SEJA CONVOSCO 🔥";
-    document.getElementById("h-data").textContent      = "📅 " + (D.data || "");
+
+    // Data: sempre a data atual do dispositivo (ignora o valor salvo no banco)
+    const hoje = new Date();
+    const dataHoje = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    document.getElementById("h-data").textContent = "📅 " + dataHoje;
 
     const lemaEl = document.getElementById("h-lema");
     lemaEl.innerHTML = "";
@@ -64,6 +68,9 @@
 
     // --- MENSAGEM WHATSAPP ---
     renderMensagem(D);
+
+    // --- FORMULÁRIO DE NOVO PEDIDO ---
+    iniciarFormularioPedido(D);
 
     // --- RODAPÉ ---
     document.getElementById("rodape-texto").textContent  = D.rodape || "Deus te abençoe 🌹";
@@ -118,9 +125,9 @@
     container.innerHTML = `
       <div class="card hino-card" style="margin-top:16px">
         <div class="card-header">
-          <span style="font-size:1.4rem">🎵</span>
+          <span style="font-size:1.4rem">🙏</span>
           <div>
-            <span class="hino-badge">Hino do Dia</span>
+            <span class="hino-badge">Oração do Dia</span>
             <div class="hino-titulo" style="margin-top:4px">${h.numero} — ${h.titulo}</div>
             <div class="hino-ref">${h.referencia}</div>
           </div>
@@ -261,12 +268,15 @@
     const linkYt       = D.hinodia ? D.hinodia.link : "";
     const intercedido  = D.intercedidoDia ? `🛐 *Intercedido do dia:* ${D.intercedidoDia}` : "";
 
+    // Data atual do dispositivo
+    const dataHoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
     // --- Mensagem resumida ---
     const templateResum = cfg.mensagemWhatsApp ||
-      "🙏 *DOS AMIGOS EM ORAÇÃO* — {DATA}\n\n🎵 *Hino do Dia:* {HINO}\n▶️ {LINK_YOUTUBE}\n\n{INTERCEDIDO_DIA}\n\n📋 Veja a lista completa de pedidos e intercessões:\n🔗 {LINK_SITE}\n\n_Oremos juntos uns pelos outros_ 🔥";
+      "🙏 *DOS AMIGOS EM ORAÇÃO* — {DATA}\n\n🙏 *Oração do Dia:* {HINO}\n▶️ {LINK_YOUTUBE}\n\n{INTERCEDIDO_DIA}\n\n📋 Veja a lista completa de pedidos e intercessões:\n🔗 {LINK_SITE}\n\n_Oremos juntos uns pelos outros_ 🔥";
 
     const resumida = templateResum
-      .replace("{DATA}",            D.data || "")
+      .replace("{DATA}",            dataHoje)
       .replace("{HINO}",            hino)
       .replace("{LINK_YOUTUBE}",    linkYt)
       .replace("{LINK_SITE}",       linkSiteVal)
@@ -282,9 +292,9 @@
     // --- Mensagem completa ---
     function gerarCompleta() {
       const linhas = [];
-      linhas.push(`🙏 *DOS AMIGOS EM ORAÇÃO* — ${D.data || ""}`);
+      linhas.push(`🙏 *DOS AMIGOS EM ORAÇÃO* — ${dataHoje}`);
       linhas.push("");
-      linhas.push(`🎵 *Hino do Dia:* ${hino}`);
+      linhas.push(`🙏 *Oração do Dia:* ${hino}`);
       if (linkYt)      linhas.push(`▶️ ${linkYt}`);
       if (intercedido) linhas.push(intercedido);
       linhas.push("");
@@ -351,6 +361,81 @@
     const t = document.getElementById("toast");
     t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), duration || 2500);
+  }
+
+  // ============================================================
+  // FORMULÁRIO DE NOVO PEDIDO (tela pública)
+  // ============================================================
+  function iniciarFormularioPedido(D) {
+    const btn      = document.getElementById("btn-enviar-pedido");
+    const feedback = document.getElementById("np-feedback");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+      const de       = (document.getElementById("np-de").value       || "").trim();
+      const nome     = (document.getElementById("np-nome").value     || "").trim();
+      const pedido   = (document.getElementById("np-pedido").value   || "").trim();
+      const descricao= (document.getElementById("np-descricao").value|| "").trim();
+      const urgente  = document.getElementById("np-urgente").checked;
+
+      if (!nome || !pedido) {
+        mostrarFeedback("⚠️ Preencha o nome e o motivo do pedido.", false);
+        return;
+      }
+
+      btn.disabled    = true;
+      btn.textContent = "Enviando...";
+
+      try {
+        // Lê dados atuais do banco (sem cache para ter a versão mais recente)
+        DB.invalidarCache();
+        const dadosAtuais = await DB.ler();
+        if (!dadosAtuais.pedidos) dadosAtuais.pedidos = [];
+
+        const novoPedido = {
+          tipo:      "pedido",
+          de:        de,
+          nome:      nome,
+          pedido:    pedido,
+          descricao: descricao,
+          urgente:   urgente
+        };
+
+        // Insere no início da lista de pedidos (mais visível)
+        const primNaoDestaque = dadosAtuais.pedidos.findIndex(p => !p.destaque);
+        if (primNaoDestaque >= 0) dadosAtuais.pedidos.splice(primNaoDestaque, 0, novoPedido);
+        else dadosAtuais.pedidos.unshift(novoPedido);
+
+        const resultado = await DB.salvar(dadosAtuais);
+
+        if (resultado.ok || resultado.local) {
+          mostrarFeedback("✅ Pedido enviado! Obrigado por compartilhar — oraremos juntos. 🙏", true);
+          // Limpa os campos
+          ["np-de","np-nome","np-pedido","np-descricao"].forEach(id => {
+            document.getElementById(id).value = "";
+          });
+          document.getElementById("np-urgente").checked = false;
+          // Re-renderiza a lista de pedidos com o novo item
+          renderPedidos(dadosAtuais.pedidos);
+        } else {
+          mostrarFeedback("❌ Não foi possível enviar. Tente novamente.", false);
+        }
+      } catch (e) {
+        mostrarFeedback("❌ Erro ao enviar: " + e.message, false);
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = "🙏 Enviar Pedido";
+      }
+    });
+
+    function mostrarFeedback(msg, sucesso) {
+      feedback.textContent   = msg;
+      feedback.style.display = "block";
+      feedback.style.background = sucesso ? "#e8faf0" : "#fde8e8";
+      feedback.style.color      = sucesso ? "#1a6e3a" : "#c0392b";
+      feedback.style.border     = `1px solid ${sucesso ? "#a3e0c0" : "#f5b7b1"}`;
+      if (sucesso) setTimeout(() => { feedback.style.display = "none"; }, 5000);
+    }
   }
 
 })();

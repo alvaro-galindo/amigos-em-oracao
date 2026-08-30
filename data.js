@@ -8,7 +8,7 @@ const SITE_DATA = {
   // --- CABEÇALHO ---
   titulo: "DOS AMIGOS EM ORAÇÃO",
   subtitulo: "🙏 PAZ SEJA CONVOSCO 🔥",
-  data: "30/08/2026",
+  data: new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }),
   lema: [
     "OREMOS JUNTOS e,",
     "UNS PELOS OUTROS",

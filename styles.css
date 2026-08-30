@@ -677,10 +677,10 @@ a:hover { text-decoration: underline; }
 .drag-card {
   cursor: default;
   transition: opacity 0.15s, box-shadow 0.15s;
-  touch-action: none;
+  /* touch-action permitida no card para scroll normal */
 }
-.drag-card[draggable="true"] { cursor: grab; }
-.drag-card[draggable="true"]:active { cursor: grabbing; }
+/* cursor grab apenas no handle, não no card inteiro */
+.drag-card[draggable="true"] { cursor: default; }
 .drag-card.drag-over-top    { border-top:    2px solid var(--roxo) !important; }
 .drag-card.drag-over-bottom { border-bottom: 2px solid var(--roxo) !important; }
 .drag-handle {
@@ -692,5 +692,8 @@ a:hover { text-decoration: underline; }
   padding: 2px 4px;
   border-radius: 4px;
   transition: background 0.1s;
+  touch-action: none; /* bloqueia scroll só no handle */
+  user-select: none;
 }
-.drag-handle:hover { background: var(--bg); }
+.drag-handle:hover  { background: var(--bg); color: var(--roxo); }
+.drag-handle:active { cursor: grabbing; }

@@ -58,6 +58,34 @@
       <div class="secao-titulo">🛐 Pedidos e Agradecimentos</div>
       <div id="pedidos-container"></div>
 
+      <!-- Formulário: enviar novo pedido -->
+      <div class="card" style="margin-top:16px;border:1.5px dashed var(--borda)">
+        <div class="card-body" style="padding:16px">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--roxo-dark);margin-bottom:12px">✍️ Enviar um Pedido de Oração</div>
+          <div class="form-group" style="margin-bottom:10px">
+            <input class="form-input" id="np-de" type="text" placeholder="Seu nome (opcional)" autocomplete="name" />
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <input class="form-input" id="np-nome" type="text" placeholder="Nome de quem precisa de oração *" />
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <input class="form-input" id="np-pedido" type="text" placeholder="Motivo / Pedido principal *" />
+          </div>
+          <div class="form-group" style="margin-bottom:10px">
+            <textarea class="form-textarea" id="np-descricao" rows="3" placeholder="Descrição completa (opcional)" style="font-size:0.85rem"></textarea>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;cursor:pointer">
+              <input type="checkbox" id="np-urgente" /> ⚡ Urgente
+            </label>
+          </div>
+          <button class="btn-primary btn-success" id="btn-enviar-pedido" style="font-size:0.88rem">
+            🙏 Enviar Pedido
+          </button>
+          <div id="np-feedback" style="display:none;margin-top:10px;font-size:0.82rem;padding:8px 12px;border-radius:8px"></div>
+        </div>
+      </div>
+
     </section>
 
     <!-- ---- ABA: MOTIVOS GERAIS ---- -->
