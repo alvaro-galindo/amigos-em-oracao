@@ -37,12 +37,6 @@ const SITE_DATA = {
   // --- PEDIDOS E AGRADECIMENTOS ---
   pedidos: [
     {
-      tipo: "pedido",
-      nome: "Reavivamento e Reforma",
-      descricao: "OREMOS JUNTOS POR UM REAVIVAMENTO e REFORMA",
-      destaque: true
-    },
-    {
       tipo: "gratidao",
       de: "Valéria (do grupo, Dos amigos em oração)",
       nome: "Carlos Credidio",
@@ -798,6 +792,15 @@ const SITE_DATA = {
   // --- RODAPÉ ---
   rodape: "Deus te abençoe 🌹 🙏🔥🙏🔥🙏🔥🙏",
   versiculoReavivamento: "\"Um REAVIVAMENTO da verdadeira piedade entre nós, eis a maior e a mais urgente de todas as nossas necessidades.\" | \"Só podemos esperar um REAVIVAMENTO em resposta à oração.\" 1ME 121.1",
+
+  // --- GRUPOS DE WHATSAPP ---
+  grupos: [
+    {
+      nome: "Dos Amigos em Oração",
+      link: "https://chat.whatsapp.com/",
+      descricao: "Grupo principal de pedidos e intercessão"
+    }
+  ],
 
   // --- CONFIGURAÇÕES DO SITE ---
   config: {

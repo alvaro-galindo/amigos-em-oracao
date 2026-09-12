@@ -34,8 +34,9 @@
        ABAS DE NAVEGAÇÃO
   ====================================================== -->
   <nav class="tabs" role="tablist">
-    <button class="tab-btn active" data-tab="pedidos"   role="tab" aria-selected="true" >🙏 Pedidos</button>
+    <button class="tab-btn active" data-tab="pedidos"   role="tab" aria-selected="true" >🙏 Pedidos/Agradecimentos</button>
     <button class="tab-btn"        data-tab="motivos"   role="tab" aria-selected="false">📋 Motivos</button>
+    <button class="tab-btn"        data-tab="grupos"    role="tab" aria-selected="false">💬 Grupos</button>
     <button class="tab-btn"        data-tab="lista"     role="tab" aria-selected="false">👥 Lista</button>
     <button class="tab-btn"        data-tab="mensagem"  role="tab" aria-selected="false">📲 Mensagem</button>
   </nav>
@@ -79,6 +80,11 @@
               <input type="checkbox" id="np-urgente" /> ⚡ Urgente
             </label>
           </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <select class="form-select" id="np-grupo" style="font-size:0.85rem">
+              <option value="">💬 Grupo de origem (opcional)</option>
+            </select>
+          </div>
           <button class="btn-primary btn-success" id="btn-enviar-pedido" style="font-size:0.88rem">
             🙏 Enviar Pedido
           </button>
@@ -92,6 +98,14 @@
     <section class="section" id="tab-motivos" role="tabpanel">
       <div class="secao-titulo" style="margin-top:8px">🛐 Motivos Gerais de Oração</div>
       <div class="motivos-grid" id="motivos-container"></div>
+    </section>
+
+    <!-- ---- ABA: GRUPOS ---- -->
+    <section class="section" id="tab-grupos" role="tabpanel">
+      <div class="secao-titulo" style="margin-top:8px">💬 Grupos de WhatsApp</div>
+      <div id="grupos-container">
+        <div class="spinner"></div>
+      </div>
     </section>
 
     <!-- ---- ABA: LISTA ---- -->

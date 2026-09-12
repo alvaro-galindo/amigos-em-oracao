@@ -68,6 +68,7 @@
       <button class="admin-tab"        data-tab="oracao"    role="tab">🙏 Oração</button>
       <button class="admin-tab"        data-tab="pedidos"  role="tab">🙏 Pedidos</button>
       <button class="admin-tab"        data-tab="motivos"  role="tab">📖 Motivos</button>
+      <button class="admin-tab"        data-tab="grupos"   role="tab">💬 Grupos</button>
       <button class="admin-tab"        data-tab="lista"    role="tab">👥 Lista</button>
       <button class="admin-tab"        data-tab="config"   role="tab">🔧 Config</button>
     </nav>
@@ -164,6 +165,20 @@
           </button>
         </div>
         <div id="motivos-admin-list"></div>
+      </div>
+
+      <!-- ---- ABA: GRUPOS ---- -->
+      <div class="admin-section" id="atab-grupos">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--roxo-dark)">Grupos de WhatsApp</div>
+          <button class="btn-primary" id="btn-novo-grupo" style="width:auto;padding:8px 16px;font-size:0.85rem">
+            ➕ Novo Grupo
+          </button>
+        </div>
+        <div style="font-size:0.75rem;color:var(--texto-suave);margin-bottom:10px">
+          Cadastre aqui os links dos grupos de WhatsApp. Eles aparecerão na aba <strong>Grupos</strong> do site.
+        </div>
+        <div id="grupos-admin-list"></div>
       </div>
 
       <!-- ---- ABA: LISTA ---- -->
@@ -275,6 +290,12 @@
         <label class="form-label" for="mp-descricao">Descrição completa</label>
         <textarea class="form-textarea" id="mp-descricao" rows="4" placeholder="Contexto completo do pedido..."></textarea>
       </div>
+      <div class="form-group">
+        <label class="form-label" for="mp-grupo">Grupo de origem</label>
+        <select class="form-select" id="mp-grupo">
+          <option value="">-- Nenhum --</option>
+        </select>
+      </div>
       <div class="form-group" style="display:flex;gap:16px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
           <input type="checkbox" id="mp-urgente" /> ⚡ Urgente
@@ -317,6 +338,32 @@
         <textarea class="form-textarea" id="mm-descricao" rows="3"></textarea>
       </div>
       <button class="btn-primary btn-success" id="btn-salvar-motivo">💾 Salvar Motivo</button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       MODAL: EDITAR GRUPO
+  ====================================================== -->
+  <div class="modal-overlay" id="modal-grupo">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" id="modal-grupo-close" aria-label="Fechar">✕</button>
+      <div class="modal-titulo" id="modal-grupo-titulo">Novo Grupo</div>
+
+      <input type="hidden" id="mg-idx" value="-1" />
+
+      <div class="form-group">
+        <label class="form-label" for="mg-nome">Nome do Grupo</label>
+        <input class="form-input" id="mg-nome" type="text" placeholder="Ex: Dos Amigos em Oração" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mg-link">Link de Convite do WhatsApp</label>
+        <input class="form-input" id="mg-link" type="url" placeholder="https://chat.whatsapp.com/..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mg-descricao">Descrição (opcional)</label>
+        <textarea class="form-textarea" id="mg-descricao" rows="3" placeholder="Breve descrição do grupo..."></textarea>
+      </div>
+      <button class="btn-primary btn-success" id="btn-salvar-grupo">💾 Salvar Grupo</button>
     </div>
   </div>
 

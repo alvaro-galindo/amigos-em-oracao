@@ -107,6 +107,7 @@
     preencherHino();
     renderPedidosAdmin();
     renderMotivosAdmin();
+    renderGruposAdmin();
     renderListaAdmin();
     preencherConfig();
     iniciarAbas();
@@ -285,7 +286,20 @@
   // --- Modal Pedido ---
   const modalPedido = document.getElementById("modal-pedido");
 
+  function popularSelectGrupos() {
+    const sel = document.getElementById("mp-grupo");
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Nenhum --</option>';
+    (dados.grupos || []).forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g.nome;
+      opt.textContent = g.nome;
+      sel.appendChild(opt);
+    });
+  }
+
   function abrirModalPedido(realIdx) {
+    popularSelectGrupos();
     const p = realIdx >= 0 ? dados.pedidos[realIdx] : null;
     document.getElementById("modal-pedido-titulo").textContent  = p ? "Editar Pedido" : "Novo Pedido";
     document.getElementById("mp-idx").value             = realIdx;
@@ -298,6 +312,7 @@
     document.getElementById("mp-urgente").checked       = p ? !!p.urgente : false;
     document.getElementById("mp-agradecimento").checked = p ? !!p.agradecimento : false;
     document.getElementById("mp-milagre").checked       = p ? !!p.milagre : false;
+    document.getElementById("mp-grupo").value           = p ? (p.grupo || "") : "";
     modalPedido.classList.add("open");
   }
 
@@ -332,7 +347,8 @@
       descricao:     document.getElementById("mp-descricao").value.trim(),
       urgente:       document.getElementById("mp-urgente").checked,
       agradecimento: document.getElementById("mp-agradecimento").checked,
-      milagre:       document.getElementById("mp-milagre").checked
+      milagre:       document.getElementById("mp-milagre").checked,
+      grupo:         document.getElementById("mp-grupo").value
     };
     if (!pedido.nome) { showToast("⚠️ Informe o nome!"); return; }
 
@@ -408,6 +424,77 @@
     renderMotivosAdmin();
     modalMotivo.classList.remove("open");
     await salvar("✅ Motivo salvo!");
+  });
+
+  // ============================================================
+  // ABA GRUPOS DE WHATSAPP
+  // ============================================================
+  function renderGruposAdmin() {
+    const container = document.getElementById("grupos-admin-list");
+    container.innerHTML = "";
+    if (!dados.grupos || dados.grupos.length === 0) {
+      container.innerHTML = '<div style="color:var(--texto-suave);text-align:center;padding:20px">Nenhum grupo cadastrado.</div>';
+      return;
+    }
+    dados.grupos.forEach((g, idx) => {
+      const card = document.createElement("div");
+      card.className = "admin-card";
+      card.innerHTML = `
+        <div class="admin-card-header">
+          <div>
+            <div class="admin-card-nome">💬 ${g.nome}</div>
+            <div class="admin-card-sub">${g.descricao || ""} ${g.link ? `| <a href="${g.link}" target="_blank" rel="noopener" style="color:var(--verde)">Abrir link</a>` : ""}</div>
+          </div>
+          <div class="admin-card-acoes">
+            <button class="btn-sm" style="background:#e8f0ff;color:var(--roxo)" data-action="editar-grupo" data-idx="${idx}">✏️ Editar</button>
+            <button class="btn-sm" style="background:#fde8e8;color:var(--vermelho)" data-action="excluir-grupo" data-idx="${idx}">🗑️</button>
+          </div>
+        </div>`;
+      container.appendChild(card);
+    });
+    container.querySelectorAll("[data-action='editar-grupo']").forEach(btn =>
+      btn.addEventListener("click", () => abrirModalGrupo(parseInt(btn.dataset.idx))));
+    container.querySelectorAll("[data-action='excluir-grupo']").forEach(btn =>
+      btn.addEventListener("click", async () => {
+        const idx = parseInt(btn.dataset.idx);
+        if (!confirm(`Excluir o grupo "${dados.grupos[idx].nome}"?`)) return;
+        dados.grupos.splice(idx, 1);
+        renderGruposAdmin();
+        await salvar("🗑️ Grupo removido.");
+      }));
+  }
+
+  const modalGrupo = document.getElementById("modal-grupo");
+
+  function abrirModalGrupo(idx) {
+    const g = idx >= 0 ? dados.grupos[idx] : null;
+    document.getElementById("modal-grupo-titulo").textContent = g ? "Editar Grupo" : "Novo Grupo";
+    document.getElementById("mg-idx").value       = idx;
+    document.getElementById("mg-nome").value      = g ? (g.nome || "") : "";
+    document.getElementById("mg-link").value      = g ? (g.link || "") : "";
+    document.getElementById("mg-descricao").value = g ? (g.descricao || "") : "";
+    modalGrupo.classList.add("open");
+  }
+
+  document.getElementById("btn-novo-grupo").addEventListener("click", () => abrirModalGrupo(-1));
+  document.getElementById("modal-grupo-close").addEventListener("click", () => modalGrupo.classList.remove("open"));
+  modalGrupo.addEventListener("click", e => { if (e.target === modalGrupo) modalGrupo.classList.remove("open"); });
+
+  document.getElementById("btn-salvar-grupo").addEventListener("click", async () => {
+    const idx = parseInt(document.getElementById("mg-idx").value);
+    const grupo = {
+      nome:      document.getElementById("mg-nome").value.trim(),
+      link:      document.getElementById("mg-link").value.trim(),
+      descricao: document.getElementById("mg-descricao").value.trim()
+    };
+    if (!grupo.nome) { showToast("⚠️ Informe o nome do grupo!"); return; }
+    if (!grupo.link) { showToast("⚠️ Informe o link do grupo!"); return; }
+    if (!dados.grupos) dados.grupos = [];
+    if (idx >= 0) dados.grupos[idx] = grupo;
+    else dados.grupos.push(grupo);
+    renderGruposAdmin();
+    modalGrupo.classList.remove("open");
+    await salvar("✅ Grupo salvo!");
   });
 
   // ============================================================

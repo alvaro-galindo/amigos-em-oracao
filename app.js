@@ -58,10 +58,13 @@
     renderOrador(D.orador, D.representacao);
 
     // --- PEDIDOS ---
-    renderPedidos(D.pedidos || []);
+    renderPedidos(D.pedidos || [], D);
 
     // --- MOTIVOS GERAIS ---
     renderMotivos(D.motivosGerais || []);
+
+    // --- GRUPOS ---
+    renderGrupos(D.grupos || []);
 
     // --- LISTA ---
     renderListaPublica(D.lista || []);
@@ -153,27 +156,23 @@
   // ============================================================
   // PEDIDOS
   // ============================================================
-  function renderPedidos(pedidos) {
+  function renderPedidos(pedidos, D) {
     const container = document.getElementById("pedidos-container");
     container.innerHTML = "";
 
-    pedidos.forEach((p, idx) => {
+    // Banner sempre no início
+    container.appendChild(criarReavivamento());
+
+    // Filtra apenas os pedidos reais (não os de destaque hardcoded antigos)
+    const reais = pedidos.filter(p => !p.destaque);
+
+    reais.forEach((p, idx) => {
+      // Repete o banner a cada 10 itens (após o 10º, 20º...)
       if (idx > 0 && idx % 10 === 0) container.appendChild(criarReavivamento());
 
       const card = document.createElement("div");
-      if (p.destaque) {
-        card.className = "card pedido-card reavivamento";
-        card.innerHTML = `
-          <div class="card-body" style="padding:16px">
-            <div class="reavivamento-text">🙏 REAVIVAMENTO e REFORMA 🙏</div>
-            <div style="font-size:0.82rem;opacity:0.85;margin-top:6px">${p.descricao || ""}</div>
-          </div>`;
-        container.appendChild(card);
-        return;
-      }
-
       let classes = "card pedido-card";
-      if (p.milagre)          classes += " milagre";
+      if (p.milagre)            classes += " milagre";
       else if (p.agradecimento) classes += " gratidao";
       else if (p.urgente)       classes += " urgente";
       card.className = classes;
@@ -184,6 +183,17 @@
       else if (p.urgente)       tagHtml = `<span class="pedido-tag tag-urgente">⚡ URGENTE</span>`;
       else                      tagHtml = `<span class="pedido-tag tag-pedido">🙏 ORAÇÃO</span>`;
 
+      // Nome do grupo (se tiver)
+      let grupoHtml = "";
+      if (p.grupo) {
+        grupoHtml = `<div class="pedido-grupo">💬 ${p.grupo}</div>`;
+      }
+
+      // Contador de orações (lido do localStorage)
+    const oracoesKey = `oracoes_${idx}_${(p.nome || "").replace(/\s/g,"_")}`;
+      const oracoesCount = parseInt(localStorage.getItem(oracoesKey) || "0");
+      const jaOrou = localStorage.getItem(oracoesKey + "_eu") === "1";
+
       card.innerHTML = `
         <div class="card-body" style="padding:14px 16px">
           ${tagHtml}
@@ -192,11 +202,47 @@
           ${p.detalhe  ? `<div class="pedido-detalhe">(${p.detalhe})</div>` : ""}
           ${p.pedido   ? `<div class="pedido-motivo">🛐 ${p.pedido}</div>` : ""}
           ${p.descricao? `<div class="pedido-descricao">${p.descricao}</div>` : ""}
+          ${grupoHtml}
+          <button class="btn-orar${jaOrou ? " orou" : ""}" data-key="${oracoesKey}" aria-label="Estou orando por este pedido" aria-pressed="${jaOrou}">
+            <span class="btn-orar-icon">🙏</span>
+            <span class="btn-orar-texto">${jaOrou ? "Orando!" : "Estou orando"}</span>
+            <span class="btn-orar-count">${oracoesCount > 0 ? oracoesCount : ""}</span>
+          </button>
         </div>`;
       container.appendChild(card);
     });
 
+    // Banner no final
     container.appendChild(criarReavivamento());
+
+    // Ativa os botões de oração
+    container.querySelectorAll(".btn-orar").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const key   = this.dataset.key;
+        const jaOrou = localStorage.getItem(key + "_eu") === "1";
+        let count    = parseInt(localStorage.getItem(key) || "0");
+
+        if (!jaOrou) {
+          count++;
+          localStorage.setItem(key, count);
+          localStorage.setItem(key + "_eu", "1");
+          this.classList.add("orou");
+          this.setAttribute("aria-pressed", "true");
+          this.querySelector(".btn-orar-texto").textContent  = "Orando!";
+          this.querySelector(".btn-orar-count").textContent  = count;
+          showToast("🙏 Que Deus ouça sua oração!");
+        } else {
+          // Permite desfazer
+          count = Math.max(0, count - 1);
+          localStorage.setItem(key, count);
+          localStorage.removeItem(key + "_eu");
+          this.classList.remove("orou");
+          this.setAttribute("aria-pressed", "false");
+          this.querySelector(".btn-orar-texto").textContent = "Estou orando";
+          this.querySelector(".btn-orar-count").textContent = count > 0 ? count : "";
+        }
+      });
+    });
   }
 
   function criarReavivamento() {
@@ -215,18 +261,62 @@
     container.innerHTML = "";
 
     motivos.forEach(m => {
+      const ytId = m.link ? extrairYoutubeId(m.link) : null;
       const card = document.createElement("div");
       card.className = "motivo-card" + (m.link ? " tem-link" : "");
+
+      const thumbHtml = ytId
+        ? `<div class="motivo-thumb">
+             <img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg"
+                  alt="Miniatura do vídeo: ${m.titulo}"
+                  loading="lazy" />
+             <div class="motivo-thumb-play">▶</div>
+           </div>`
+        : "";
+
       card.innerHTML = `
+        ${thumbHtml}
         <div class="motivo-titulo">${m.titulo}</div>
         ${m.referencia ? `<div class="motivo-ref">${m.referencia}</div>` : ""}
         ${m.descricao  ? `<div class="motivo-desc">${m.descricao}</div>`  : ""}
         ${m.link       ? `<a href="${m.link}" target="_blank" rel="noopener" class="motivo-link">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-          Assistir</a>` : ""}`;
+          Ore comigo</a>` : ""}`;
       if (m.link) card.addEventListener("click", e => {
         if (!e.target.closest("a")) window.open(m.link, "_blank", "noopener");
       });
+      container.appendChild(card);
+    });
+  }
+
+  // ============================================================
+  // GRUPOS DE WHATSAPP
+  // ============================================================
+  function renderGrupos(grupos) {
+    const container = document.getElementById("grupos-container");
+    container.innerHTML = "";
+
+    if (!grupos || grupos.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--texto-suave)">
+          <div style="font-size:2.5rem;margin-bottom:12px">💬</div>
+          <div style="font-size:0.9rem">Nenhum grupo cadastrado ainda.</div>
+        </div>`;
+      return;
+    }
+
+    grupos.forEach(g => {
+      const card = document.createElement("div");
+      card.className = "card grupo-card";
+      card.innerHTML = `
+        <div class="card-body" style="padding:16px">
+          <div class="grupo-nome">${g.nome || "Grupo sem nome"}</div>
+          ${g.descricao ? `<div class="grupo-desc">${g.descricao}</div>` : ""}
+          <a href="${g.link}" target="_blank" rel="noopener" class="btn-whatsapp-grupo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Entrar no Grupo
+          </a>
+        </div>`;
       container.appendChild(card);
     });
   }
@@ -371,12 +461,25 @@
     const feedback = document.getElementById("np-feedback");
     if (!btn) return;
 
+    // Popula o select de grupos
+    const selectGrupo = document.getElementById("np-grupo");
+    if (selectGrupo) {
+      selectGrupo.innerHTML = '<option value="">-- Nenhum / Não informar --</option>';
+      (D.grupos || []).forEach(g => {
+        const opt = document.createElement("option");
+        opt.value = g.nome;
+        opt.textContent = g.nome;
+        selectGrupo.appendChild(opt);
+      });
+    }
+
     btn.addEventListener("click", async () => {
       const de       = (document.getElementById("np-de").value       || "").trim();
       const nome     = (document.getElementById("np-nome").value     || "").trim();
       const pedido   = (document.getElementById("np-pedido").value   || "").trim();
       const descricao= (document.getElementById("np-descricao").value|| "").trim();
       const urgente  = document.getElementById("np-urgente").checked;
+      const grupo    = selectGrupo ? (selectGrupo.value || "") : "";
 
       if (!nome || !pedido) {
         mostrarFeedback("⚠️ Preencha o nome e o motivo do pedido.", false);
@@ -398,7 +501,8 @@
           nome:      nome,
           pedido:    pedido,
           descricao: descricao,
-          urgente:   urgente
+          urgente:   urgente,
+          grupo:     grupo
         };
 
         // Insere no início da lista de pedidos (mais visível)
@@ -415,8 +519,9 @@
             document.getElementById(id).value = "";
           });
           document.getElementById("np-urgente").checked = false;
+          if (selectGrupo) selectGrupo.value = "";
           // Re-renderiza a lista de pedidos com o novo item
-          renderPedidos(dadosAtuais.pedidos);
+          renderPedidos(dadosAtuais.pedidos, dadosAtuais);
         } else {
           mostrarFeedback("❌ Não foi possível enviar. Tente novamente.", false);
         }
