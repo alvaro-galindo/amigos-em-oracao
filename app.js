@@ -156,7 +156,15 @@
   // ============================================================
   // PEDIDOS
   // ============================================================
+
+  // dadosGlobais guarda a referência dos dados carregados, para que
+  // o clique em "Estou orando" possa incrementar e salvar no banco.
+  let dadosGlobais = null;
+
   function renderPedidos(pedidos, D) {
+    // Mantém referência global para acesso nos listeners de oração
+    if (D) dadosGlobais = D;
+
     const container = document.getElementById("pedidos-container");
     container.innerHTML = "";
 
@@ -164,11 +172,14 @@
     container.appendChild(criarReavivamento());
 
     // Filtra apenas os pedidos reais (não os de destaque hardcoded antigos)
-    const reais = pedidos.filter(p => !p.destaque);
+    // Guarda também o índice original no array pedidos[] para escrita no banco
+    const reais = pedidos
+      .map((p, originalIdx) => ({ p, originalIdx }))
+      .filter(({ p }) => !p.destaque);
 
-    reais.forEach((p, idx) => {
+    reais.forEach(({ p, originalIdx }, posicao) => {
       // Repete o banner a cada 10 itens (após o 10º, 20º...)
-      if (idx > 0 && idx % 10 === 0) container.appendChild(criarReavivamento());
+      if (posicao > 0 && posicao % 10 === 0) container.appendChild(criarReavivamento());
 
       const card = document.createElement("div");
       let classes = "card pedido-card";
@@ -184,15 +195,14 @@
       else                      tagHtml = `<span class="pedido-tag tag-pedido">🙏 ORAÇÃO</span>`;
 
       // Nome do grupo (se tiver)
-      let grupoHtml = "";
-      if (p.grupo) {
-        grupoHtml = `<div class="pedido-grupo">💬 ${p.grupo}</div>`;
-      }
+      const grupoHtml = p.grupo
+        ? `<div class="pedido-grupo">💬 ${p.grupo}</div>`
+        : "";
 
-      // Contador de orações (lido do localStorage)
-    const oracoesKey = `oracoes_${idx}_${(p.nome || "").replace(/\s/g,"_")}`;
-      const oracoesCount = parseInt(localStorage.getItem(oracoesKey) || "0");
-      const jaOrou = localStorage.getItem(oracoesKey + "_eu") === "1";
+      // Contagem vem do banco (campo p.oracoes); "eu já orei" fica só no localStorage
+      const oracoesCount = parseInt(p.oracoes || 0);
+      const localKey     = `orou_${originalIdx}_${(p.nome || "").replace(/\s/g, "_")}`;
+      const jaOrou       = localStorage.getItem(localKey) === "1";
 
       card.innerHTML = `
         <div class="card-body" style="padding:14px 16px">
@@ -203,7 +213,11 @@
           ${p.pedido   ? `<div class="pedido-motivo">🛐 ${p.pedido}</div>` : ""}
           ${p.descricao? `<div class="pedido-descricao">${p.descricao}</div>` : ""}
           ${grupoHtml}
-          <button class="btn-orar${jaOrou ? " orou" : ""}" data-key="${oracoesKey}" aria-label="Estou orando por este pedido" aria-pressed="${jaOrou}">
+          <button class="btn-orar${jaOrou ? " orou" : ""}"
+                  data-original-idx="${originalIdx}"
+                  data-local-key="${localKey}"
+                  aria-label="Estou orando por este pedido"
+                  aria-pressed="${jaOrou}">
             <span class="btn-orar-icon">🙏</span>
             <span class="btn-orar-texto">${jaOrou ? "Orando!" : "Estou orando"}</span>
             <span class="btn-orar-count">${oracoesCount > 0 ? oracoesCount : ""}</span>
@@ -217,29 +231,56 @@
 
     // Ativa os botões de oração
     container.querySelectorAll(".btn-orar").forEach(btn => {
-      btn.addEventListener("click", function () {
-        const key   = this.dataset.key;
-        const jaOrou = localStorage.getItem(key + "_eu") === "1";
-        let count    = parseInt(localStorage.getItem(key) || "0");
+      btn.addEventListener("click", async function () {
+        const originalIdx = parseInt(this.dataset.originalIdx);
+        const localKey    = this.dataset.localKey;
+        const jaOrou      = localStorage.getItem(localKey) === "1";
 
-        if (!jaOrou) {
-          count++;
-          localStorage.setItem(key, count);
-          localStorage.setItem(key + "_eu", "1");
-          this.classList.add("orou");
-          this.setAttribute("aria-pressed", "true");
-          this.querySelector(".btn-orar-texto").textContent  = "Orando!";
-          this.querySelector(".btn-orar-count").textContent  = count;
-          showToast("🙏 Que Deus ouça sua oração!");
-        } else {
-          // Permite desfazer
-          count = Math.max(0, count - 1);
-          localStorage.setItem(key, count);
-          localStorage.removeItem(key + "_eu");
-          this.classList.remove("orou");
-          this.setAttribute("aria-pressed", "false");
-          this.querySelector(".btn-orar-texto").textContent = "Estou orando";
-          this.querySelector(".btn-orar-count").textContent = count > 0 ? count : "";
+        if (this.disabled) return;
+        this.disabled = true;
+
+        try {
+          // Busca os dados mais recentes do banco para evitar sobrescrever
+          // orações de outros usuários que clicaram ao mesmo tempo
+          DB.invalidarCache();
+          const dadosAtuais = await DB.ler();
+          const pedido = dadosAtuais.pedidos && dadosAtuais.pedidos[originalIdx];
+          if (!pedido) return;
+
+          if (!jaOrou) {
+            // Incrementa no banco
+            pedido.oracoes = parseInt(pedido.oracoes || 0) + 1;
+            localStorage.setItem(localKey, "1");
+
+            // Atualiza visual imediatamente
+            const novoCount = pedido.oracoes;
+            this.classList.add("orou");
+            this.setAttribute("aria-pressed", "true");
+            this.querySelector(".btn-orar-texto").textContent = "Orando!";
+            this.querySelector(".btn-orar-count").textContent = novoCount;
+            showToast("🙏 Que Deus ouça sua oração!");
+
+            // Salva no banco em background
+            await DB.salvar(dadosAtuais);
+            dadosGlobais = dadosAtuais;
+          } else {
+            // Desfazer: decrementa
+            pedido.oracoes = Math.max(0, parseInt(pedido.oracoes || 0) - 1);
+            localStorage.removeItem(localKey);
+
+            const novoCount = pedido.oracoes;
+            this.classList.remove("orou");
+            this.setAttribute("aria-pressed", "false");
+            this.querySelector(".btn-orar-texto").textContent = "Estou orando";
+            this.querySelector(".btn-orar-count").textContent = novoCount > 0 ? novoCount : "";
+
+            await DB.salvar(dadosAtuais);
+            dadosGlobais = dadosAtuais;
+          }
+        } catch (e) {
+          showToast("❌ Não foi possível registrar. Tente novamente.", 3000);
+        } finally {
+          this.disabled = false;
         }
       });
     });
