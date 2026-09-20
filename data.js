@@ -807,7 +807,7 @@ const SITE_DATA = {
     nomeGrupo: "Dos Amigos em Oração",
     senhaAdmin: "oracao2026",  // TROQUE ESSA SENHA!
     linkSite: "https://seu-site.netlify.app",  // Atualize após publicar
-    mensagemWhatsApp: "🙏 *DOS AMIGOS EM ORAÇÃO* — {DATA}\n\n🎵 *Hino do Dia:* {HINO}\n▶️ {LINK_YOUTUBE}\n\n� *Intercedido do dia:* {INTERCEDIDO_DIA}\n\n�📋 Veja a lista completa de pedidos e intercessões:\n🔗 {LINK_SITE}\n\n_Oremos juntos uns pelos outros_ 🔥"
+    mensagemWhatsApp: "\uD83D\uDE4F DOS AMIGOS EM ORAÇÃO — {DATA}\n\n\uD83D\uDE4FOração do Dia: {ORACAO}\n\n        POR: {ORADOR}\n\n         {REPRESENTACAO}\n\n\u25B6\uFE0F {LINK_YOUTUBE}\n\n\uD83D\uDCCB Segue a lista completa de pedidos e intercessões:\n\n\uD83D\uDD17ORE POR ELES - UM PRIVILÉGIO\n\n {LINK_SITE}\n\nOremos juntos uns pelos outros \uD83D\uDD25 \n\nPARTICIPE E DESFRUTE DESTA BÊNÇÃO DIARIAMENTE"
   }
 };
 

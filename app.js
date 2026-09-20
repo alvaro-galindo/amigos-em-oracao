@@ -393,25 +393,53 @@
   // MENSAGEM WHATSAPP
   // ============================================================
   function renderMensagem(D) {
-    const cfg          = D.config || {};
-    const linkSiteVal  = cfg.linkSite || "https://seu-site.netlify.app";
-    const hino         = D.hinodia ? `${D.hinodia.numero} — ${D.hinodia.titulo} (${D.hinodia.referencia})` : "";
-    const linkYt       = D.hinodia ? D.hinodia.link : "";
-    const intercedido  = D.intercedidoDia ? `🛐 *Intercedido do dia:* ${D.intercedidoDia}` : "";
+    const cfg         = D.config || {};
+    const linkSiteVal = cfg.linkSite || "https://seu-site.netlify.app";
+
+    // Monta a string da oração no formato: referencia - numero - titulo
+    const hinoObj  = D.hinodia || {};
+    const oracao   = [hinoObj.referencia, hinoObj.numero, hinoObj.titulo]
+                       .filter(Boolean).join(" - ");
+    // {HINO} mantido por compatibilidade (mesmo valor que {ORACAO})
+    const linkYt   = hinoObj.link || "";
+    const orador   = D.orador        || "";
+    const repres   = D.representacao || "";
+    const intercedido = D.intercedidoDia
+      ? "\uD83D\uDEF0 Intercedido do dia: " + D.intercedidoDia
+      : "";
 
     // Data atual do dispositivo
     const dataHoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-    // --- Mensagem resumida ---
-    const templateResum = cfg.mensagemWhatsApp ||
-      "🙏 *DOS AMIGOS EM ORAÇÃO* — {DATA}\n\n🙏 *Oração do Dia:* {HINO}\n▶️ {LINK_YOUTUBE}\n\n{INTERCEDIDO_DIA}\n\n📋 Veja a lista completa de pedidos e intercessões:\n🔗 {LINK_SITE}\n\n_Oremos juntos uns pelos outros_ 🔥";
+    // Template padrão caso nenhum tenha sido configurado
+    const templatePadrao =
+      "\uD83D\uDE4F DOS AMIGOS EM ORAÇÃO — {DATA}\n\n" +
+      "\uD83D\uDE4FOração do Dia: {ORACAO}\n\n" +
+      "        POR: {ORADOR}\n\n" +
+      "         {REPRESENTACAO}\n\n" +
+      "\u25B6\uFE0F {LINK_YOUTUBE}\n\n" +
+      "\uD83D\uDCCB Segue a lista completa de pedidos e intercessões:\n\n" +
+      "\uD83D\uDD17ORE POR ELES - UM PRIVILÉGIO\n\n " +
+      "{LINK_SITE}\n\n" +
+      "Oremos juntos uns pelos outros \uD83D\uDD25 \n\n" +
+      "PARTICIPE E DESFRUTE DESTA BÊNÇÃO DIARIAMENTE";
 
-    const resumida = templateResum
-      .replace("{DATA}",            dataHoje)
-      .replace("{HINO}",            hino)
-      .replace("{LINK_YOUTUBE}",    linkYt)
-      .replace("{LINK_SITE}",       linkSiteVal)
-      .replace("{INTERCEDIDO_DIA}", intercedido);
+    const template = cfg.mensagemWhatsApp || templatePadrao;
+
+    // Substitui todas as variáveis — usa replaceAll para cobrir múltiplas ocorrências
+    function substituir(tpl) {
+      return tpl
+        .replace(/\{DATA\}/g,            dataHoje)
+        .replace(/\{ORACAO\}/g,          oracao)
+        .replace(/\{HINO\}/g,            oracao)          // alias retrocompatível
+        .replace(/\{LINK_YOUTUBE\}/g,    linkYt)
+        .replace(/\{ORADOR\}/g,          orador)
+        .replace(/\{REPRESENTACAO\}/g,   repres)
+        .replace(/\{LINK_SITE\}/g,       linkSiteVal)
+        .replace(/\{INTERCEDIDO_DIA\}/g, intercedido);
+    }
+
+    const resumida = substituir(template);
 
     document.getElementById("wpp-preview").textContent = resumida;
 
@@ -420,49 +448,42 @@
     linkEl.textContent = linkSiteVal;
     linkEl.href        = linkSiteVal;
 
-    // --- Mensagem completa ---
+    // --- Mensagem completa (com lista de pedidos) ---
     function gerarCompleta() {
       const linhas = [];
-      linhas.push(`🙏 *DOS AMIGOS EM ORAÇÃO* — ${dataHoje}`);
+      linhas.push(resumida);
       linhas.push("");
-      linhas.push(`🙏 *Oração do Dia:* ${hino}`);
-      if (linkYt)      linhas.push(`▶️ ${linkYt}`);
-      if (intercedido) linhas.push(intercedido);
+      linhas.push("\uD83D\uDEF0\uD83D\uDEF0\uD83D\uDEF0 PEDIDOS E AGRADECIMENTOS \uD83D\uDEF0\uD83D\uDEF0\uD83D\uDEF0");
       linhas.push("");
-      linhas.push("🛐🛐🛐 *PEDIDOS E AGRADECIMENTOS* 🛐🛐🛐");
-      linhas.push("");
-      (D.pedidos || []).forEach(p => {
-        if (p.destaque) { linhas.push("🙏 REAVIVAMENTO e REFORMA 🙏"); linhas.push("======================"); return; }
-        if (p.agradecimento || p.milagre) linhas.push("GRATIDÃO");
-        if (p.de)       linhas.push(`De: ${p.de}`);
-        if (p.nome)     linhas.push(`🙏 ${p.nome}`);
-        if (p.detalhe)  linhas.push(`(${p.detalhe})`);
-        if (p.pedido)   linhas.push(`🛐 ${p.pedido}`);
+      (D.pedidos || []).filter(p => !p.destaque).forEach(p => {
+        if (p.agradecimento || p.milagre) linhas.push("\uD83D\uDE4C GRATIDÃO");
+        if (p.de)       linhas.push("De: " + p.de);
+        if (p.nome)     linhas.push("\uD83D\uDE4F " + p.nome);
+        if (p.detalhe)  linhas.push("(" + p.detalhe + ")");
+        if (p.pedido)   linhas.push("\uD83D\uDEF0 " + p.pedido);
         if (p.descricao) linhas.push(p.descricao);
         linhas.push("======================");
       });
-      linhas.push(""); linhas.push(`📋 Site completo: ${linkSiteVal}`);
-      linhas.push(""); linhas.push("_Oremos juntos uns pelos outros_ 🔥");
       return linhas.join("\n");
     }
 
     // Botões
     document.getElementById("btn-wpp-enviar").onclick = () =>
-      window.open(`https://wa.me/?text=${encodeURIComponent(resumida)}`, "_blank", "noopener");
+      window.open("https://wa.me/?text=" + encodeURIComponent(resumida), "_blank", "noopener");
 
     document.getElementById("btn-copiar").onclick = function () {
       navigator.clipboard.writeText(resumida).then(() => {
-        this.textContent = "✅ Copiado!"; this.classList.add("copied");
-        showToast("Mensagem resumida copiada!");
-        setTimeout(() => { this.textContent = "📋 Copiar Mensagem Resumida"; this.classList.remove("copied"); }, 2500);
+        this.textContent = "\u2705 Copiado!"; this.classList.add("copied");
+        showToast("Mensagem copiada!");
+        setTimeout(() => { this.textContent = "\uD83D\uDCCB Copiar Mensagem Resumida"; this.classList.remove("copied"); }, 2500);
       });
     };
 
     document.getElementById("btn-copiar-completa").onclick = function () {
       navigator.clipboard.writeText(gerarCompleta()).then(() => {
-        this.textContent = "✅ Copiado!"; this.classList.add("copied");
+        this.textContent = "\u2705 Copiado!"; this.classList.add("copied");
         showToast("Mensagem completa copiada!");
-        setTimeout(() => { this.textContent = "📄 Copiar Mensagem Completa"; this.classList.remove("copied"); }, 2500);
+        setTimeout(() => { this.textContent = "\uD83D\uDCC4 Copiar Mensagem Completa"; this.classList.remove("copied"); }, 2500);
       });
     };
 
